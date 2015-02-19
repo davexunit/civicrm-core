@@ -1237,7 +1237,7 @@ GROUP BY     mt.member_of_contact_id";
     // Auto renew checkbox should be frozen if for all the membership type auto renew is required
 
     // get the membership type auto renew option and check if required or optional
-    $query = 'SELECT mt.auto_renew, mt.duration_interval, mt.duration_unit
+    $query = 'SELECT mt.auto_renew, mt.duration_interval, mt.duration_unit, pf.id, pf.html_type
             FROM civicrm_price_field_value pfv
             INNER JOIN civicrm_membership_type mt ON pfv.membership_type_id = mt.id
             INNER JOIN civicrm_price_field pf ON pfv.price_field_id = pf.id
@@ -1249,7 +1249,10 @@ GROUP BY     mt.member_of_contact_id";
 
     $dao = CRM_Core_DAO::executeQuery($query, $params);
     $autoRenewOption = 2;
-    $interval = $unit = array();
+    $interval = array();
+    $unit = array();
+    $type = array();
+
     while ($dao->fetch()) {
       if (!$dao->auto_renew) {
         $autoRenewOption = 0;
@@ -1261,9 +1264,22 @@ GROUP BY     mt.member_of_contact_id";
 
       $interval[$dao->duration_interval] = $dao->duration_interval;
       $unit[$dao->duration_unit] = $dao->duration_unit;
+      $type[$dao->id] = $dao->html_type;
     }
 
-    if (count($interval) == 1 && count($unit) == 1 && $autoRenewOption > 0) {
+    // Autorenew is only a valid option when:
+    //
+    // * Only a single membership can be chosen (i.e. a single radio
+    //   button group)
+    //
+    // OR
+    //
+    // * There is no variation in the duration intervals or units for
+    //   all of the relevant membership types.
+    $sameDuration = count($interval) == 1 && count($unit) == 1;
+    $singleRadioGroup = array_values($type) == array('Radio');
+
+    if ($sameDuration || $singleRadioGroup) {
       return $autoRenewOption;
     }
     else {
