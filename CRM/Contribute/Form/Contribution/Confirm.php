@@ -410,7 +410,12 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
       $this->_params['is_recur'] = $this->_values['is_recur'] = 1;
       // check if price set is not quick config
       if (!empty($this->_params['priceSetId']) && !CRM_Core_DAO::getFieldValue('CRM_Price_DAO_PriceSet', $this->_params['priceSetId'], 'is_quick_config')) {
-        list($this->_params['frequency_interval'], $this->_params['frequency_unit']) = CRM_Price_BAO_PriceSet::getRecurDetails($this->_params['priceSetId']);
+        // Extract the ids for all of the line items that have been
+        // chosen.
+        $priceFieldValueIds = array_keys($this->_lineItem[$this->_params['priceSetId']]);
+
+        list($this->_params['frequency_interval'], $this->_params['frequency_unit']) =
+          CRM_Price_BAO_PriceSet::getRecurDetails($this->_params['priceSetId'], $priceFieldValueIds);
       }
       else {
         // FIXME: set interval and unit based on selected membership type

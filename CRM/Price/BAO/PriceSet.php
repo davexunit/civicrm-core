@@ -1292,16 +1292,24 @@ GROUP BY     mt.member_of_contact_id";
    *
    * @param int $priceSetId
    *   Price set id.
+   * @param array $priceFieldValueIds
+   *   Price field value ids (line items).
    *
    * @return array
    *   associate array of frequency interval and unit
    */
-  public static function getRecurDetails($priceSetId) {
+  public static function getRecurDetails($priceSetId, $priceFieldValueIds) {
+    // Escape the array of ids.
+    foreach ($priceFieldValueIds as $index => $id) {
+      $priceFieldValueIds[$index] = CRM_Utils_Type::escape($id, 'Integer');
+    }
+
     $query = 'SELECT mt.duration_interval, mt.duration_unit
             FROM civicrm_price_field_value pfv
             INNER JOIN civicrm_membership_type mt ON pfv.membership_type_id = mt.id
             INNER JOIN civicrm_price_field pf ON pfv.price_field_id = pf.id
-            WHERE pf.price_set_id = %1 LIMIT 1';
+            WHERE pf.price_set_id = %1 AND pfv.id IN ('
+      . implode(',', $priceFieldValueIds) . ') LIMIT 1';
 
     $params = array(1 => array($priceSetId, 'Integer'));
     $dao = CRM_Core_DAO::executeQuery($query, $params);
